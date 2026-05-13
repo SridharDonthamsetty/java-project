@@ -51,7 +51,7 @@ jobs:
         run: trivy --version
   trivy-scan:
       name: Trivy Scan
-      runs_on: self-hosted
+      runs-on: self-hosted
       needs: install-trivy
       steps:
         - name: checkout repo
