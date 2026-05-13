@@ -50,25 +50,26 @@ jobs:
       - name: Verify Trivy Installation
         run: trivy --version
   trivy-scan:
-      name: Trivy Scan
-      runs-on: self-hosted
-      needs: install-trivy
-      steps:
-        - name: checkout repo
-          uses: actions/checkout@v4
+    name: Trivy Scan
+    runs-on: self-hosted
+    needs: install-trivy
+
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
           
-        - name: Create Reports Directory
-          run: mkdir -p reports
+      - name: Create Reports Directory
+        run: mkdir -p reports
 
-        - name: Run Trivy Filesystem Scan
-          run: |
-            trivy fs . \
-              --format table \
-              --output reports/trivy-report.txt
+      - name: Run Trivy Filesystem Scan
+        run: |
+          trivy fs . \
+            --format table \
+            --output reports/trivy-report.txt
 
-        - name: Display Report Details
-         run: |
-            echo "Trivy report generated successfully"
-            ls -lh reports/trivy-report.txt
-            echo "First 20 lines of report:"
-            head -20 reports/trivy-report.txt
+      - name: Display Report Details
+        run: |
+           echo "Trivy report generated successfully"
+           ls -lh reports/trivy-report.txt
+           echo "First 20 lines of report:"
+           head -20 reports/trivy-report.txt
