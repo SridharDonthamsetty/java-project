@@ -54,6 +54,9 @@ jobs:
       runs_on: self-hosted
       needs: install-trivy
       steps:
+        - name: checkout repo
+          uses: actions/checkout@v4
+          
         - name: Create Reports Directory
           run: mkdir -p reports
 
