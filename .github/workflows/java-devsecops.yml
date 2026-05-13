@@ -1,0 +1,51 @@
+name: Java DevSecOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  checkout-code:
+    name: Checkout Repository
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Display Working Directory
+        run: pwd
+
+      - name: List Repository Files
+        run: ls -la
+
+  install-trivy:
+    name: Install Trivy
+    runs-on: self-hosted
+    needs: checkout-code
+
+    steps:
+      - name: Install Trivy
+        run: |
+          if command -v trivy >/dev/null 2>&1; then
+            echo "Trivy is already installed"
+            trivy --version
+            exit 0
+          fi
+
+          sudo apt-get update -y
+          sudo apt-get install -y wget gnupg lsb-release apt-transport-https
+
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
+            | gpg --dearmor \
+            | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" \
+            | sudo tee /etc/apt/sources.list.d/trivy.list
+
+          sudo apt-get update -y
+          sudo apt-get install -y trivy
+
+      - name: Verify Trivy Installation
+        run: trivy --version
