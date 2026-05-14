@@ -34,7 +34,7 @@ jobs:
   install-trivy:
     name: Install Trivy
     runs-on: self-hosted
-    needs: checkout-code
+    needs: maven-package
 
     steps:
       - name: Install Trivy
