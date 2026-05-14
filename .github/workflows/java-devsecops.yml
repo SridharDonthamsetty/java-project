@@ -70,9 +70,13 @@ jobs:
             --format table \
             --output reports/trivy-report.txt
 
+      - name: Scan Built JAR
+        run: |
+          trivy fs target/java-devsecops-demo-1.0-SNAPSHOT.jar \
+            --format table \
+            --output reports/trivy-jar-report.txt
+
       - name: Display Report Details
         run: |
            echo "Trivy report generated successfully"
-           ls -lh reports/trivy-report.txt
-           echo "First 20 lines of report:"
-           head -20 reports/trivy-report.txt
+           ls -lh reports/
