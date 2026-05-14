@@ -19,22 +19,11 @@ jobs:
 
       - name: List Repository Files
         run: ls -la
-  maven-package:
-    name: maven package
-    runs-on: self-hosted
-    needs: checkout-code
-    
-    steps:
-      - name: checout srouce code
-        uses: actions/checkout@v4
-        
-      - name: maven package
-        run: mvn clean package
 
   install-trivy:
     name: Install Trivy
     runs-on: self-hosted
-    needs: maven-package
+    needs: checkout-code
 
     steps:
       - name: Install Trivy
@@ -71,6 +60,9 @@ jobs:
           
       - name: Create Reports Directory
         run: mkdir -p reports
+
+      - name: maven package
+        run: mvn clean package
 
       - name: Run Trivy Filesystem Scan
         run: |
