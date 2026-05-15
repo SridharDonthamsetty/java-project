@@ -42,6 +42,20 @@ jobs:
             -Dsonar.host.url=http://13.48.43.93:9000 \
             -Dsonar.token=$SONAR_TOKEN
 
+      - name: Prepare SonarQube Quality Gate Metadata
+        run: |
+           mkdir -p .scannerwork
+
+           if [ -f target/sonar/report-task.txt ]; then
+             cp target/sonar/report-task.txt .scannerwork/report-task.txt
+           elif [ -f .scannerwork/report-task.txt ]; then
+             echo "report-task.txt already exists"
+           else
+             echo "report-task.txt not found"
+             find . -name report-task.txt
+             exit 1
+           fi
+
       # Wait for SonarQube to compute and return the Quality Gate result
       - name: SonarQube Quality Gate
         uses: sonarsource/sonarqube-quality-gate-action@master
@@ -61,7 +75,7 @@ jobs:
 
       # Confirm the image was created
       - name: Verify Docker Image
-        run: docker images | grep java-project
+        run: docker images
 
       # Smoke test the container
       - name: Test Docker Container
