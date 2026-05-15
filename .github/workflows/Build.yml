@@ -16,6 +16,21 @@ jobs:
       - name: Build Maven Package
         run: mvn clean package
 
+      - name: Create Reports Directory
+        run: mkdir -p reports
+
+      - name: Run Trivy Filesystem Scan
+        run: |
+          trivy fs . \
+            --format table \
+            --output reports/trivy-report.txt
+
+      - name: Trivy Scan Built JAR
+        run: |
+          trivy fs target/java-devsecops-demo-1.0-SNAPSHOT.jar \
+            --format table \
+            --output reports/trivy-jar-report.txt
+
       # Run SonarQube analysis (uses the Maven Sonar scanner)
       - name: SonarQube Scan
         env:
