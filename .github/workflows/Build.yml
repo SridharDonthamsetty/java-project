@@ -1,0 +1,54 @@
+name: Build pipeline
+
+on:
+  workflow_dispatch:
+    
+jobs:
+  build:
+    name: Build, Scan, Quality Gate and Docker Build
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      # Build the Java application and create target/*.jar
+      - name: Build Maven Package
+        run: mvn clean package
+
+      # Run SonarQube analysis (uses the Maven Sonar scanner)
+      - name: SonarQube Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn sonar:sonar \
+            -Dsonar.projectKey=java-project \
+            -Dsonar.projectName=java-project \
+            -Dsonar.host.url=http://13.48.43.93:9000 \
+            -Dsonar.token=$SONAR_TOKEN
+
+      # Wait for SonarQube to compute and return the Quality Gate result
+      - name: SonarQube Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 10
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: http://13.48.43.93:9000
+
+      # Verify the JAR exists
+      - name: Verify Target Directory
+        run: ls -lh target
+
+      # Build a runnable Docker image
+      - name: Build Docker Image
+        run: |
+          docker build -t java-project:latest .
+
+      # Confirm the image was created
+      - name: Verify Docker Image
+        run: docker images | grep java-project
+
+      # Smoke test the container
+      - name: Test Docker Container
+        run: |
+          docker run --rm java-project:latest
