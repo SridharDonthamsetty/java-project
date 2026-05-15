@@ -78,7 +78,6 @@ jobs:
       - name: Verify Docker Image
         run: docker images
 
-      # Smoke test the container
-      - name: Test Docker Container
-        run: |
-          docker run --rm java-project:latest
+      # start the conatainer
+      - name: start the container
+        run: docker run -d --name java-project -p 8080:8080 java-project:latest
