@@ -39,12 +39,13 @@ jobs:
           mvn sonar:sonar \
             -Dsonar.projectKey=java-project \
             -Dsonar.projectName=java-project \
-            -Dsonar.host.url=http://13.48.43.93:9000 \
+            -Dsonar.host.url=http://56.228.22.185:9000 \
             -Dsonar.token=$SONAR_TOKEN
 
       - name: Prepare SonarQube Quality Gate Metadata
         run: |
            mkdir -p .scannerwork
+           pwd
 
            if [ -f target/sonar/report-task.txt ]; then
              cp target/sonar/report-task.txt .scannerwork/report-task.txt
@@ -62,7 +63,7 @@ jobs:
         timeout-minutes: 10
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: http://13.48.43.93:9000
+          SONAR_HOST_URL: http://56.228.22.185:9000
 
       # Verify the JAR exists
       - name: Verify Target Directory
