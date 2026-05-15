@@ -39,7 +39,7 @@ jobs:
           mvn sonar:sonar \
             -Dsonar.projectKey=java-project \
             -Dsonar.projectName=java-project \
-            -Dsonar.host.url=http://56.228.22.185:9000 \
+            -Dsonar.host.url=http://13.60.50.252:9000 \
             -Dsonar.token=$SONAR_TOKEN
 
       - name: Prepare SonarQube Quality Gate Metadata
@@ -63,7 +63,7 @@ jobs:
         timeout-minutes: 10
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: http://56.228.22.185:9000
+          SONAR_HOST_URL: http://13.60.50.252:9000
 
       # Verify the JAR exists
       - name: Verify Target Directory
@@ -78,6 +78,46 @@ jobs:
       - name: Verify Docker Image
         run: docker images
 
-      # start the conatainer
-      - name: start the container
-        run: docker run -d --name java-project -p 8080:8080 java-project:latest
+      - name: Start PostgreSQL Container
+        run: |
+          # Remove old container if it exists
+          docker rm -f postgres || true
+
+          # Create persistent volume if it does not exist
+          docker volume create postgres_data || true
+
+          # Start PostgreSQL
+          docker run -d \
+            --name postgres \
+            -e POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+            -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+            -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            -p 5432:5432 \
+            -v postgres_data:/var/lib/postgresql/data \
+            postgres:16
+
+      - name: Wait for PostgreSQL to Become Ready
+        run: |
+          echo "Waiting for PostgreSQL..."
+          until docker exec postgres pg_isready \
+            -U "${{ secrets.POSTGRES_USER }}" \
+            -d "${{ secrets.POSTGRES_DB }}"; do
+            sleep 2
+          done
+          echo "PostgreSQL is ready."
+      - name: Start Java Application Container
+        run: |
+          docker rm -f java-project || true
+
+          docker run -d \
+            --name java-project \
+            --link postgres:postgres \
+            -p 8080:8080 \
+            -e DB_URL=jdbc:postgresql://postgres:5432/${{ secrets.POSTGRES_DB }} \
+            -e DB_USER=${{ secrets.POSTGRES_USER }} \
+            -e DB_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            java-project:latest 
+      - name: Verify Application Response
+        run: |
+          sleep 5
+          curl http://localhost:8080
