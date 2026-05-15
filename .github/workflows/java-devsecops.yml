@@ -103,7 +103,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sonar-scannerwork
-          path: .scannerwork/report-task.txt
+          path: target/sonar/report-task.txt
             
   sonarqube-quality-gate:
     name: SonarQube Quality Gate
