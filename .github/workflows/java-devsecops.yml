@@ -99,6 +99,11 @@ jobs:
             -Dsonar.projectName=java-project \
             -Dsonar.host.url=http://13.48.43.93:9000 \
             -Dsonar.token=$SONAR_TOKEN
+      - name: Upload Sonar Scanner Metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-scannerwork
+          path: .scannerwork/report-task.txt
             
   sonarqube-quality-gate:
     name: SonarQube Quality Gate
@@ -106,6 +111,18 @@ jobs:
     needs: sonarqube-scan
 
     steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download Sonar Scanner Metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: sonar-scannerwork
+          path: .scannerwork
+
+      - name: Verify Downloaded File
+        run: ls -la .scannerwork
+        
       - name: Wait for Quality Gate Result
         uses: sonarsource/sonarqube-quality-gate-action@master
         timeout-minutes: 10
