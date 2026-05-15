@@ -1,9 +1,7 @@
 name: Java DevSecOps Pipeline
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   checkout-code:
