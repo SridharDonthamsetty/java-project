@@ -1,0 +1,114 @@
+# trigger:
+# - main
+
+pool:
+  name: 'Testing'   # pool name that contains Agent-1
+  demands: Agent.Name -equals Agent-1
+
+stages:
+  - stage: Compile
+    displayName: Maven Compile
+    jobs:
+      - job:
+        displayName: Maven Compile
+        steps:
+          - task: Maven@4
+            inputs:
+              azureSubscription: 'Testing-AAD'
+              mavenPomFile: 'pom.xml'
+              goals: 'compile'
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              javaHomeOption: 'JDKVersion'
+              mavenVersionOption: 'Default'
+              mavenAuthenticateFeed: false
+              effectivePomSkip: false
+              sonarQubeRunAnalysis: false
+  - stage: Test
+    displayName: Maven Test
+    jobs:
+      - job:
+        displayName: Maven test
+        steps:
+          - task: Maven@4
+            inputs:
+              azureSubscription: 'Testing-AAD'
+              mavenPomFile: 'pom.xml'
+              goals: 'test'
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              javaHomeOption: 'JDKVersion'
+              mavenVersionOption: 'Default'
+              mavenAuthenticateFeed: false
+              effectivePomSkip: false
+              sonarQubeRunAnalysis: false
+  - stage: Publish
+    displayName: Maven Deploy
+    jobs:
+      - job:
+        displayName: maven deploy job
+        steps:
+          - task: MavenAuthenticate@0
+            inputs:
+              artifactsFeeds: 'Maven-feed'
+          - task: Maven@4
+            inputs:
+              mavenPomFile: 'pom.xml'
+              goals: 'deploy'
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              javaHomeOption: 'JDKVersion'
+              mavenVersionOption: 'Default'
+              mavenAuthenticateFeed: false
+              effectivePomSkip: false
+              sonarQubeRunAnalysis: false
+          - task: PublishBuildArtifacts@1
+            displayName: Publish JAR
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/target'
+              ArtifactName: 'jar'
+  - stage: Docker
+    displayName: Build Docker image on remote host
+    jobs:
+      - job:
+        displayName: Docker Build image job
+        steps:
+          - task: DownloadBuildArtifacts@1
+            displayName: Download JAR artifact
+            inputs:
+              buildType: 'current'
+              artifactName: 'jar'
+              downloadPath: '$(Build.SourcesDirectory)/_artifacts_jar'
+          
+          - task: CopyFilesOverSSH@0
+            displayName: Copy docker file
+            inputs:
+              sshEndpoint: 'Docker-host'
+              sourceFolder: '$(Build.SourcesDirectory)'
+              contents: |
+                Dockerfile
+              targetFolder: '/tmp/bankapp'
+              readyTimeout: '20000'
+
+
+          - task: CopyFilesOverSSH@0
+            displayName: Copy jar file
+            inputs:
+              sshEndpoint: 'Docker-host'
+              sourceFolder: '$(Build.SourcesDirectory)/_artifacts_jar/jar'
+              contents: |
+                bankapp-0.0.1-SNAPSHOT.jar
+              targetFolder: '/tmp/bankapp/target'
+              readyTimeout: '20000'
+          
+          - task: SSH@0
+            inputs:
+              sshEndpoint: 'Docker-host'
+              runOptions: 'commands'
+              commands: |
+                cd /tmp/bankapp/
+                ls -la
+                docker build -t bankapp:$(Build.BuildId) /tmp/bankapp/
+                docker images
+              failOnStdErr: false
+              readyTimeout: '20000'
