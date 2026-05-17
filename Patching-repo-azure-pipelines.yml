@@ -1,0 +1,23 @@
+trigger: none
+
+parameters:
+- name: action_type
+  displayName: Select Playbook
+  type: string
+  default: patching
+  values:
+    - patching
+    - deploy_app
+    - user_create
+    - restart_services
+
+pool:
+  name: Testing
+  demands:
+    - Agent.Name -equals Agent-1
+
+steps:
+- script: |
+    echo "Selected playbook: ${{ parameters.action_type }}"
+    ansible-playbook -i inventory.ini ${{ parameters.action_type }}.yml
+  displayName: Run Ansible Playbook
